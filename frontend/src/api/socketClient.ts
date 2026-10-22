@@ -8,36 +8,41 @@ type SocketCallbacks = {
 };
 
 export function connectSocket(token: string, { onMessage, onStatus }: SocketCallbacks) {
-  // TODO:
-  // 1) подключиться к WebSocket по WS_URL
-  // 2) при открытии сообщать статус "connected", при закрытии — "disconnected"
-  // 3) слушать сообщения; при type === "message:new" вызывать onMessage(payload)
-  // 4) вернуть методы sendMessage(text) -> отправка { type: "message:send", payload: { text, token } }
-  // 5) вернуть disconnect() для закрытия сокета
-  const socket = new WebSocket(`${WS_URL}`);
+  const socket = new WebSocket(WS_URL);
 
   socket.addEventListener("open", () => {
-    onStatus?.("connected")
+    onStatus?.("connected");
   });
 
   socket.addEventListener("close", () => {
-    onStatus?.("disconnected")
+    onStatus?.("disconnected");
   });
 
-  socket.addEventListener("message:new", (event) => {
-    const data = JSON.parse(event.data) as { type: string, payload: unknown};
-    if (data.type === message:new) {
-      onMessage?.(data.payload as Message);
-    } else if (data.type === "") {
-      onStatus?.(data.payload as string);
+  socket.addEventListener("error", () => {
+    onStatus?.("error");
+  });
+
+  socket.addEventListener("message", (event) => {
+    let data: { type: string; payload: unknown };
+    try {
+      data = JSON.parse(String(event.data)) as { type: string; payload: unknown };
+    } catch {
+      return;
     }
-  })
+
+    if (data.type === "message:new") {
+      onMessage?.(data.payload as Message);
+    } else if (data.type === "error") {
+      onStatus?.(`error: ${String(data.payload)}`);
+    }
+  });
+
   return {
-    sendMessage: (_text: string) => {
-      if (!text || socket.readyState === WebSocket.OPEN) {
+    sendMessage: (text: string) => {
+      if (!text || socket.readyState !== WebSocket.OPEN) {
         return;
       }
-      socket.send(JSON.stringify({type: "message:send", payload: {text, token}}));
+      socket.send(JSON.stringify({ type: "message:send", payload: { text, token } }));
     },
     disconnect: () => {
       socket.close();

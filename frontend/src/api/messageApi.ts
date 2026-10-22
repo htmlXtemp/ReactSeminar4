@@ -1,5 +1,5 @@
 import type { Message } from "../types";
-import Axios from "axios"
+import Axios from "axios";
 
 const API_URL = import.meta.env?.VITE_API_URL || "http://localhost:3001";
 
@@ -11,21 +11,23 @@ function authHeaders(token: string) {
 }
 
 export async function getMessages(token: string): Promise<Message[]> {
-  // TODO: запросить GET /messages (Fetch) с заголовком Authorization Bearer <token>, вернуть список сообщений
-  const result = await fetch(`${API_URL}/messages`,
-    {headers: authHeaders(token)}
-  );
+  const result = await fetch(`${API_URL}/messages`, {
+    headers: authHeaders(token)
+  });
+
   if (!result.ok) {
-    throw new Error(`${result.status}`);
-    
+    const error = await result.json().catch(() => null);
+    throw new Error(error?.message ?? `Ошибка запроса (${result.status})`);
   }
+
   return result.json();
 }
 
 export async function sendMessage(token: string, text: string): Promise<Message> {
-  // TODO: отправить POST /messages (Axios) c { text } и заголовком Authorization, вернуть созданное сообщение
-  const result = await Axios.post(`${API_URL}/messages`, {text}, {
-    headers: authHeaders(token)
-  });
-  return result.data();
+  const result = await Axios.post<Message>(
+    `${API_URL}/messages`,
+    { text },
+    { headers: authHeaders(token) }
+  );
+  return result.data;
 }

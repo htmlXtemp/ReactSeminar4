@@ -30,7 +30,7 @@ export function ChatPage({ token }: Props) {
       <h2>Чат</h2>
       <p>Статус сокета: {socketStatus}</p>
       {loading ? <p>Загрузка сообщений...</p> : null}
-      {error ? <p style={{ color: "red" }}>{error}</p> : null}
+      {error ? <p>{error}</p> : null}
       {/* TODO: отрисовать список сообщений и инпут отправки */}
     </div>
   );

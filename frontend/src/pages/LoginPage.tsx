@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { User } from "../types";
 import { login } from "../api/authApi"
-import { handleError } from "../helpers"
+import { handleError } from "../helpers/handleError"
 
 type Props = {
   onLogin: (token: string, user: User) => void;
@@ -31,7 +31,7 @@ export function LoginPage({ onLogin }: Props) {
   return (
     <div>
       <h2>Вход</h2>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <form onSubmit={handleSubmit}>
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон" />
         <input
           type="password"
@@ -43,7 +43,7 @@ export function LoginPage({ onLogin }: Props) {
           {loading ? "Входим..." : "Войти"}
         </button>
       </form>
-      {error ? <p style={{ color: "red" }}>{error}</p> : null}
+      {error ? <p>{error}</p> : null}
     </div>
   );
 }

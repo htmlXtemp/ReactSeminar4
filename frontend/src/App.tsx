@@ -1,27 +1,66 @@
-import React from "react";
-import Profile from "./pages/ProfilePage";
-import Login from "./pages/LoginPage";
-import Chat from "./pages/ChatPage";
-import { getToken, clearToken } from "./helpers/authStorage"
+import { useState } from "react";
+import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
+import ChatPage from "./pages/ChatPage";
+import { getToken, clearToken } from "./helpers/authStorage";
 import type { User } from "./types";
+
+type Tab = "login" | "profile" | "chat";
+
 export function App() {
-  const read_token = getToken();
-  const [token, setToken] = useState<string | null>(read_token);
+  const [token, setToken] = useState<string | null>(() => getToken());
   const [user, setUser] = useState<User | null>(null);
-  // TODO: завести состояние для токена и активной вкладки (login | profile | chat)
-  // TODO: реализовать обработчики входа/выхода, которые обновляют это состояние
-  // TODO: отрисовать навигацию с тремя кнопками:
-  //  - login доступна до авторизации (и активна по умолчанию)
-  //  - profile и chat становятся активными только после успешного входа
-  // TODO: выводить содержимое активной вкладки 
-  // TODO: при наличии токена показывать кнопку "Выйти" в шапке
-  return {
-    <>
-      <Login/>
-      <Profile/>
-      <Chat/>
-    </>
+
+  const [activeTab, setActiveTab] = useState<Tab>(() => (getToken() ? "chat" : "login"));
+
+  const isAuthenticated = Boolean(token);
+
+  const handleLogin = (newToken: string, newUser: User) => {
+    setToken(newToken);
+    setUser(newUser);
+    setActiveTab("chat");
   };
+
+  const handleLogout = () => {
+    clearToken();
+    setToken(null);
+    setUser(null);
+    setActiveTab("login");
+  };
+
+  return (
+    <div>
+      <header>
+        <h1>Messenger</h1>
+
+        <nav>
+          <button onClick={() => setActiveTab("login")} disabled={activeTab === "login"}>
+            Вход
+          </button>
+          <button
+            onClick={() => setActiveTab("profile")}
+            disabled={!isAuthenticated || activeTab === "profile"}
+          >
+            Профиль
+          </button>
+          <button
+            onClick={() => setActiveTab("chat")}
+            disabled={!isAuthenticated || activeTab === "chat"}
+          >
+            Чат
+          </button>
+        </nav>
+
+        {isAuthenticated ? <button onClick={handleLogout}>Выйти</button> : null}
+      </header>
+
+      <main>
+        {activeTab === "login" && <LoginPage onLogin={handleLogin} />}
+        {activeTab === "profile" && token && <ProfilePage token={token} />}
+        {activeTab === "chat" && token && <ChatPage token={token} />}
+      </main>
+    </div>
+  );
 }
 
 export default App;

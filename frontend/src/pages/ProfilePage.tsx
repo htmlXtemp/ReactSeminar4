@@ -26,9 +26,9 @@ export function ProfilePage({ token }: Props) {
     <div>
       <h2>Профиль</h2>
       {loading && <p>Загрузка...</p>}
-      {error ? <p style={{ color: "red" }}>{error}</p> : null}
+      {error ? <p>{error}</p> : null}
       {/* TODO: отрисовать карточку профиля */}
-      <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div>
         <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Ник" />
         <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Описание" />
         <button onClick={handleSave} disabled={loading}>
