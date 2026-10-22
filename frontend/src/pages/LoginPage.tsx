@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import type { User } from "../types";
-import { login } from "../api/authApi"
-import { handleError } from "../helpers/handleError"
+import { login } from "../api/authApi";
+import { setToken } from "../helpers/authStorage";
+import { handleError } from "../helpers/handleError";
 
 type Props = {
   onLogin: (token: string, user: User) => void;
@@ -18,20 +19,20 @@ export function LoginPage({ onLogin }: Props) {
     setLoading(true);
     setError("");
     try {
-      const response = await login({ phone, password});
-    } catch(error) {
-      
+      const { token, user } = await login({ phone, password });
+      setToken(token);
+      onLogin(token, user);
+    } catch (err) {
+      setError(handleError(err));
+    } finally {
+      setLoading(false);
     }
-    // TODO: вызвать authApi.login с телефоном и паролем
-    // TODO: при успехе сохранить токен через authStorage.setToken и вызвать onLogin(token, user)
-    // TODO: показать сообщение об ошибке через handleError при неуспехе
-    // TODO: выставлять флаги loading/error
   };
 
   return (
     <div>
       <h2>Вход</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон" />
         <input
           type="password"
@@ -43,7 +44,7 @@ export function LoginPage({ onLogin }: Props) {
           {loading ? "Входим..." : "Войти"}
         </button>
       </form>
-      {error ? <p>{error}</p> : null}
+      {error ? <p style={{ color: "red" }}>{error}</p> : null}
     </div>
   );
 }
