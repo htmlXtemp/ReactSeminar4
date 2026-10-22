@@ -10,7 +10,12 @@ export function MessageInput({ onSend, disabled }: Props) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: по submit вызывать onSend с trim-текстом, чистить поле, не отправлять пустое
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    onSend(trimmed);
+    setText("");
   };
 
   return (

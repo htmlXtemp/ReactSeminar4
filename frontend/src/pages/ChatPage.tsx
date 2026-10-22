@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import type { Message } from "../types";
+import { getMessages, sendMessage } from "../api/messageApi";
+import { connectSocket } from "../api/socketClient";
+import { handleError } from "../helpers/handleError";
+import MessageList from "../components/MessageList";
+import MessageInput from "../components/MessageInput";
 
 type Props = {
   token: string;
@@ -10,28 +15,76 @@ export function ChatPage({ token }: Props) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [socketStatus, setSocketStatus] = useState<string>("disconnected");
-  const [socketClient, setSocketClient] = useState<any>(null);
+
+  const addMessage = (message: Message) => {
+    setMessages((prev) =>
+      prev.some((item) => item.id === message.id) ? prev : [...prev, message]
+    );
+  };
 
   useEffect(() => {
-    // TODO: при монтировании загрузить историю сообщений через messageApi.getMessages(token)
-    // TODO: подключиться к сокету через connectSocket(token, { onMessage, onStatus })
-    //  - onMessage: добавлять новые сообщения в стейт
-    //  - onStatus: обновлять socketStatus
-    // TODO: при размонтировании отключать сокет
+    let cancelled = false;
+
+    const loadHistory = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const history = await getMessages(token);
+        if (!cancelled) {
+          setMessages(history);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(handleError(err));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadHistory();
+
+    const socket = connectSocket(token, {
+      onStatus: (status) => {
+        if (!cancelled) {
+          setSocketStatus(status);
+        }
+      },
+      onMessage: (message) => {
+        if (!cancelled) {
+          addMessage(message);
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      socket.disconnect();
+    };
   }, [token]);
 
   const handleSend = async (text: string) => {
-    // TODO: вызвать messageApi.sendMessage(token, text), добавить отправленное сообщение в стейт без дублей
-    // TODO: обрабатывать ошибки через handleError
+    setError("");
+    try {
+      const created = await sendMessage(token, text);
+      addMessage(created);
+    } catch (err) {
+      setError(handleError(err));
+    }
   };
+
+  const isConnected = socketStatus === "connected";
 
   return (
     <div>
       <h2>Чат</h2>
       <p>Статус сокета: {socketStatus}</p>
       {loading ? <p>Загрузка сообщений...</p> : null}
-      {error ? <p>{error}</p> : null}
-      {/* TODO: отрисовать список сообщений и инпут отправки */}
+      {error ? <p style={{ color: "red" }}>{error}</p> : null}
+      <MessageList messages={messages} />
+      <MessageInput onSend={handleSend} disabled={!isConnected} />
     </div>
   );
 }
